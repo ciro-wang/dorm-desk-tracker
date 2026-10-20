@@ -56,6 +56,8 @@ export interface Listing {
   isBundle: boolean;
   bundleContents: string | null;
   autoCheck: boolean;
+  /** A marketplace seller the owner trusts; its new-condition prices count like the retailer's. */
+  trustedSeller: boolean;
 }
 
 export type Condition = "new" | "open_box" | "refurbished";

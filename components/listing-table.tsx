@@ -51,6 +51,7 @@ export function ListingTable({ rows, now, bestListingId }: { rows: ListingRowDat
                   </a>
                   {listing.id === bestListingId && <span className="ml-2 text-xs text-sage">best</span>}
                   {!listing.autoCheck && <div className="text-xs text-muted-foreground">manual only</div>}
+                  {listing.trustedSeller && <div className="text-xs text-muted-foreground">trusted seller</div>}
                 </td>
                 <td className="px-4 py-3 align-top tabular-nums">
                   {cents != null ? formatCad(cents) : "—"}

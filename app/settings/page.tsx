@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { loadCatalog } from "@/lib/data/load";
 import { requireUser } from "@/lib/db/ssr";
-import { removeListing, toggleAutoCheck } from "./actions";
+import { removeListing, toggleAutoCheck, toggleTrustedSeller } from "./actions";
 import { AddListingForm, TargetsForm } from "./forms";
 
 export default function SettingsPage() {
@@ -40,6 +40,13 @@ async function SettingsContent() {
                   <input type="hidden" name="listingId" value={l.id} />
                   {!l.autoCheck && <input type="hidden" name="autoCheck" value="on" />}
                   <button type="submit" className="text-xs text-oak hover:underline">{l.autoCheck ? "Auto-check on · turn off" : "Manual only · turn on auto-check"}</button>
+                </form>
+                <form action={toggleTrustedSeller}>
+                  <input type="hidden" name="listingId" value={l.id} />
+                  {!l.trustedSeller && <input type="hidden" name="trustedSeller" value="on" />}
+                  <button type="submit" className="text-xs text-oak hover:underline" title="Trusted marketplace sellers count toward best price and alerts">
+                    {l.trustedSeller ? "Trusted seller · untrust" : "Not trusted · trust seller"}
+                  </button>
                 </form>
                 <form action={removeListing}>
                   <input type="hidden" name="listingId" value={l.id} />

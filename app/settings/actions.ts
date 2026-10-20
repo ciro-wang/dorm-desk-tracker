@@ -61,6 +61,7 @@ export async function addListing(_prev: FormState, formData: FormData): Promise<
     is_bundle: v.isBundle,
     bundle_contents: v.isBundle ? v.bundleContents : null,
     auto_check: v.autoCheck,
+    trusted_seller: v.trustedSeller,
   });
   return error ? { ok: false, error: error.code === "23505" ? "That link is already on this product" : "Couldn't add the listing" } : done();
 }
@@ -70,6 +71,15 @@ export async function removeListing(formData: FormData): Promise<void> {
   const id = z.uuid().safeParse(formData.get("listingId"));
   if (!id.success) return;
   await db.from("listings").delete().eq("id", id.data);
+  done();
+}
+
+/** Marketplace sellers you trust count toward best price and alerts. */
+export async function toggleTrustedSeller(formData: FormData): Promise<void> {
+  const { db } = await requireUser();
+  const id = z.uuid().safeParse(formData.get("listingId"));
+  if (!id.success) return;
+  await db.from("listings").update({ trusted_seller: formData.get("trustedSeller") === "on" }).eq("id", id.data);
   done();
 }
 

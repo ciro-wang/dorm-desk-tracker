@@ -35,6 +35,7 @@ export function listingFromRow(r: Row): Listing {
     isBundle: r.is_bundle as boolean,
     bundleContents: (r.bundle_contents as string | null) ?? null,
     autoCheck: r.auto_check as boolean,
+    trustedSeller: Boolean(r.trusted_seller),
   };
 }
 

@@ -47,6 +47,7 @@ const listing = z.object({
   isBundle: z.boolean().default(false),
   bundleContents: z.string().nullable().default(null),
   autoCheck: z.boolean().default(true),
+  trustedSeller: z.boolean().default(false),
 });
 
 export const SeedFile = z

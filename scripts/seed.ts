@@ -67,6 +67,7 @@ async function main() {
         is_bundle: l.isBundle,
         bundle_contents: l.bundleContents,
         auto_check: l.autoCheck,
+        trusted_seller: l.trustedSeller,
       })),
       { onConflict: "product_id,url" },
     );

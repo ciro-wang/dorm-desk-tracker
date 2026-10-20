@@ -32,8 +32,9 @@ describe("db mappers", () => {
   it("maps listing rows", () => {
     const l = listing();
     expect(
-      listingFromRow({ id: l.id, product_id: l.productId, merchant_id: l.merchantId, url: l.url, is_bundle: false, bundle_contents: null, auto_check: true }),
+      listingFromRow({ id: l.id, product_id: l.productId, merchant_id: l.merchantId, url: l.url, is_bundle: false, bundle_contents: null, auto_check: true, trusted_seller: false }),
     ).toEqual(l);
+    expect(listingFromRow({ id: "x", product_id: "p", merchant_id: "m", url: "https://a", is_bundle: false, bundle_contents: null, auto_check: false, trusted_seller: true }).trustedSeller).toBe(true);
   });
 
   it("round-trips alert state", () => {

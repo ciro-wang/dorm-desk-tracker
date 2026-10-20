@@ -49,6 +49,12 @@ describe("migrations", () => {
     for (const v of views) expect(v[2], v[1]).toContain("security_invoker = true");
   });
 
+  it("let a listing's marketplace seller be trusted, and count trusted sellers in the history views", () => {
+    expect(sql).toMatch(/alter table (?:public\.)?listings add column (?:if not exists )?trusted_seller boolean not null default false/);
+    const lastView = sql.slice(sql.lastIndexOf("view public.listing_daily_best"));
+    expect(lastView.slice(0, lastView.indexOf(";"))).toMatch(/pl\.seller = 'retailer' or l\.trusted_seller/);
+  });
+
   it("store when downtown pickup disappeared, for the pickup alert re-arm", () => {
     expect(sql).toMatch(/alter table (?:public\.)?alert_state add column (?:if not exists )?pickup_gone_since timestamptz/);
   });

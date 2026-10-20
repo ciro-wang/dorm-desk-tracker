@@ -36,6 +36,15 @@ describe("parseSeed", () => {
     expect(() => parseSeed(s)).toThrow();
   });
 
+  it("accepts a trusted-seller flag on listings and defaults it to off", () => {
+    const s = clone();
+    s.listings = [
+      { productSlug: s.products[0].slug, merchantSlug: "amazon", url: "https://www.amazon.ca/dp/B000000001", trustedSeller: true },
+      { productSlug: s.products[0].slug, merchantSlug: "amazon", url: "https://www.amazon.ca/dp/B000000002" },
+    ];
+    expect(parseSeed(s).listings.map((l) => l.trustedSeller)).toEqual([true, false]);
+  });
+
   it("rejects a non-https listing url", () => {
     const s = clone();
     s.listings = [{ productSlug: s.products[0].slug, merchantSlug: "best-buy", url: "http://www.bestbuy.ca/x" }];

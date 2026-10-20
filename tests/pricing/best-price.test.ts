@@ -56,6 +56,27 @@ describe("bestPriceNow", () => {
     expect(best?.listingId).toBe(real.id);
   });
 
+  it("counts a marketplace seller only when you have marked that listing as trusted", () => {
+    const retailer = listing();
+    const reseller = listing();
+    const trusted = listing({ trustedSeller: true });
+    const best = bestPriceNow(
+      [
+        { listing: retailer, latest: log(retailer.id, { priceCents: 119000 }) },
+        { listing: reseller, latest: log(reseller.id, { priceCents: 90000, seller: "marketplace" }) },
+        { listing: trusted, latest: log(trusted.id, { priceCents: 95000, seller: "marketplace" }) },
+      ],
+      now,
+      [],
+    );
+    expect(best?.listingId).toBe(trusted.id);
+  });
+
+  it("does not let a trusted seller's open-box offer count", () => {
+    const trusted = listing({ trustedSeller: true });
+    expect(bestPriceNow([{ listing: trusted, latest: log(trusted.id, { seller: "marketplace", condition: "open_box" }) }], now, [])).toBeNull();
+  });
+
   it("returns null when every listing is stale or failed", () => {
     const a = listing();
     const b = listing();

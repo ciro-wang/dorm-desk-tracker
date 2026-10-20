@@ -13,7 +13,7 @@ import { buildWatchRow } from "@/lib/dashboard";
 import { loadCatalog, loadLatestLogs, loadListingHistory, loadProductHistory } from "@/lib/data/load";
 import { requireUser } from "@/lib/db/ssr";
 import { formatCad } from "@/lib/money";
-import type { PriceLog, Product } from "@/lib/types";
+import type { Listing, PriceLog, Product } from "@/lib/types";
 
 export default function ProductPage({ params }: PageProps<"/product/[slug]">) {
   return (
@@ -26,7 +26,8 @@ export default function ProductPage({ params }: PageProps<"/product/[slug]">) {
   );
 }
 
-const isOtherOffer = (l: PriceLog | null) => l != null && (l.condition !== "new" || l.seller === "marketplace");
+const isOtherOffer = (listing: Listing, l: PriceLog | null) =>
+  l != null && (l.condition !== "new" || (l.seller === "marketplace" && !listing.trustedSeller));
 
 async function ProductDetail({ params }: { params: PageProps<"/product/[slug]">["params"] }) {
   const { db } = await requireUser();
@@ -52,8 +53,8 @@ async function ProductDetail({ params }: { params: PageProps<"/product/[slug]">[
     merchant: merchant.get(e.listing.merchantId),
     pickupIds: catalog.pickupStores.filter((s) => s.merchantId === e.listing.merchantId).map((s) => s.externalStoreId),
   });
-  const main = entries.filter((e) => !e.listing.isBundle && !isOtherOffer(e.latest)).map(toRow);
-  const others = entries.filter((e) => !e.listing.isBundle && isOtherOffer(e.latest)).map(toRow);
+  const main = entries.filter((e) => !e.listing.isBundle && !isOtherOffer(e.listing, e.latest)).map(toRow);
+  const others = entries.filter((e) => !e.listing.isBundle && isOtherOffer(e.listing, e.latest)).map(toRow);
   const bundles = entries.filter((e) => e.listing.isBundle);
 
   const chartStores = [...new Set(listingHistory.map((h) => h.merchantId))].map((id) => ({ slug: merchant.get(id)?.slug ?? id, name: merchant.get(id)?.name ?? "Store" }));
@@ -116,7 +117,7 @@ async function ProductDetail({ params }: { params: PageProps<"/product/[slug]">[
       {others.length > 0 && (
         <section aria-labelledby="other">
           <h2 id="other" className="mb-1 text-xl">Other offers</h2>
-          <p className="mb-3 text-sm text-muted-foreground">Open-box, refurbished or third-party sellers. Shown for reference; never counted as the best price.</p>
+          <p className="mb-3 text-sm text-muted-foreground">Open-box, refurbished or third-party sellers. Shown for reference; not counted as the best price unless you mark the seller as trusted in Settings.</p>
           <ListingTable rows={others} now={now} bestListingId={null} />
         </section>
       )}

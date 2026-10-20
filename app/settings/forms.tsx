@@ -63,6 +63,9 @@ export function AddListingForm({ productId, merchants }: { productId: string; me
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <input type="checkbox" name="autoCheck" defaultChecked /> Check automatically
       </label>
+      <label className="flex items-center gap-1.5 text-xs text-muted-foreground" title="Let this marketplace seller's prices count toward best price and alerts">
+        <input type="checkbox" name="trustedSeller" /> Trusted seller
+      </label>
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <input type="checkbox" name="isBundle" /> Bundle
       </label>

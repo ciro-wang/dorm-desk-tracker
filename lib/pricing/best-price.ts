@@ -20,13 +20,13 @@ export function isStale(checkedAt: string, now: Date, maxAgeMs = STALE_AFTER_MS)
   return now.getTime() - Date.parse(checkedAt) > maxAgeMs;
 }
 
-/** Whether a log may set a product's price: new, sold by the retailer, not a bundle, successfully checked. */
+/** Whether a log may set a product's price: new, sold by the retailer (or a seller you trust), not a bundle, successfully checked. */
 export function isCountable(listing: Listing, log: PriceLog): boolean {
   return (
     !listing.isBundle &&
     log.status === "ok" &&
     log.condition === "new" &&
-    log.seller === "retailer" &&
+    (log.seller === "retailer" || listing.trustedSeller) &&
     log.priceCents != null
   );
 }

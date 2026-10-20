@@ -58,4 +58,5 @@ export const ListingInput = z.object({
     .nullish()
     .transform((v) => v || null),
   autoCheck: checkbox,
+  trustedSeller: checkbox,
 });
