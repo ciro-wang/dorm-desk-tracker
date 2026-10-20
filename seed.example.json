@@ -1,0 +1,36 @@
+{
+  "merchants": [
+    { "slug": "best-buy", "name": "Best Buy" },
+    { "slug": "canada-computers", "name": "Canada Computers" },
+    { "slug": "dell", "name": "Dell" },
+    { "slug": "amazon", "name": "Amazon.ca" },
+    { "slug": "memory-express", "name": "Memory Express" },
+    { "slug": "newegg", "name": "Newegg" },
+    { "slug": "fluance", "name": "Fluance" },
+    { "slug": "crutchfield", "name": "Crutchfield" },
+    { "slug": "visions", "name": "Visions Electronics" },
+    { "slug": "bay-bloor-radio", "name": "Bay Bloor Radio" }
+  ],
+  "pickupStores": [],
+  "products": [
+    {
+      "slug": "example-monitor",
+      "name": "Example 32\" OLED Monitor",
+      "category": "monitor",
+      "msrp": 1000,
+      "targetHigh": 1,
+      "targetLow": 1,
+      "specs": { "kind": "monitor", "sizeIn": 32, "resW": 3840, "resH": 2160, "refreshHz": 240, "panel": "QD-OLED", "panelHeightCm": 40, "usbcPdW": 90, "curve": null }
+    },
+    {
+      "slug": "example-speaker",
+      "name": "Example Powered Bookshelf Speakers",
+      "category": "speaker",
+      "msrp": 300,
+      "targetHigh": 1,
+      "targetLow": 1,
+      "specs": { "kind": "speaker", "wooferIn": 5, "subOut": true, "dimensionsMm": null, "inputs": ["RCA", "Bluetooth"] }
+    }
+  ],
+  "listings": []
+}

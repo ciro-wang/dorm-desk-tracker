@@ -1,0 +1,30 @@
+# Private planning docs (describe the owner; never push)
+docs/superpowers/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local seed data (personal targets/watchlist)
+seed.local.*
+
+.DS_Store
+
+# --- Next.js scaffold ---
+/node_modules
+/coverage
+/.next/
+/out/
+/build
+*.pem
+npm-debug.log*
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.superpowers/
+playwright-report/
+test-results/
+
+# Local Claude config
+.claude/
