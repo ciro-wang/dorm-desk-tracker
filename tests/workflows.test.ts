@@ -19,6 +19,12 @@ describe("GitHub workflows (public repo hygiene)", () => {
     }
   });
 
+  it("let a manual price check skip the 3-hour wait via a force checkbox", () => {
+    const y = files.find((x) => x.f === "check-prices.yml")!.y;
+    expect(y).toMatch(/workflow_dispatch:\n    inputs:\n      force:\n        description: [^\n]+\n        type: boolean/);
+    expect(y).toContain("npx tsx scripts/check-prices.ts ${{ inputs.force && '--force' || '' }}");
+  });
+
   it("give scheduled jobs read-only access to the code (needed to check out a private repo) and nothing else", () => {
     for (const { f, y } of files.filter((x) => /schedule:/.test(x.y))) {
       expect(y, f).toMatch(/^permissions:\n  contents: read\n(?!  )/m);
