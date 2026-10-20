@@ -5,7 +5,9 @@ on:
     - cron: "*/30 * * * *"
   workflow_dispatch:
 
-permissions: {}
+# Read-only access to this repo's code (required to check out a private repo). Nothing else.
+permissions:
+  contents: read
 
 concurrency:
   group: check-prices

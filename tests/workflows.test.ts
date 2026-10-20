@@ -19,9 +19,10 @@ describe("GitHub workflows (public repo hygiene)", () => {
     }
   });
 
-  it("give scheduled jobs no token permissions and only expose secrets to scheduled runs", () => {
+  it("give scheduled jobs read-only access to the code (needed to check out a private repo) and nothing else", () => {
     for (const { f, y } of files.filter((x) => /schedule:/.test(x.y))) {
-      expect(y, f).toMatch(/^permissions: \{\}$/m);
+      expect(y, f).toMatch(/^permissions:\n  contents: read\n(?!  )/m);
+      expect(y, f).not.toMatch(/: write\b/);
       expect(y, f).not.toMatch(/pull_request/);
     }
   });
