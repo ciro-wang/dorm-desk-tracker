@@ -2,7 +2,7 @@ name: Fetch news
 
 on:
   schedule:
-    - cron: "*/20 * * * *"
+    - cron: "4,24,44 * * * *"
   workflow_dispatch:
 
 # Read-only access to this repo's code (required to check out a private repo). Nothing else.

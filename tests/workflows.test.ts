@@ -19,6 +19,24 @@ describe("GitHub workflows (public repo hygiene)", () => {
     }
   });
 
+  it("schedule off the busy :00 and :30 marks, where GitHub delays or drops runs", () => {
+    for (const { f, y } of files.filter((x) => /schedule:/.test(x.y))) {
+      const crons = [...y.matchAll(/- cron: "([^"]+)"/g)].map((m) => m[1]);
+      expect(crons.length, f).toBeGreaterThan(0);
+      for (const c of crons) {
+        const minutes = c.split(" ")[0];
+        expect(minutes, `${f}: ${c}`).toMatch(/^[0-9]+(,[0-9]+)*$/);
+        for (const m of minutes.split(",").map(Number)) expect(m % 15, `${f}: minute ${m}`).not.toBe(0);
+      }
+    }
+  });
+
+  it("check prices at least every 30 minutes and news at least every 20", () => {
+    const minutesOf = (name: string) => files.find((x) => x.f === name)!.y.match(/- cron: "([0-9,]+) /)![1].split(",").length;
+    expect(minutesOf("check-prices.yml")).toBeGreaterThanOrEqual(2);
+    expect(minutesOf("fetch-news.yml")).toBeGreaterThanOrEqual(3);
+  });
+
   it("let a manual price check skip the 3-hour wait via a force checkbox", () => {
     const y = files.find((x) => x.f === "check-prices.yml")!.y;
     expect(y).toMatch(/workflow_dispatch:\n    inputs:\n      force:\n        description: [^\n]+\n        type: boolean/);
