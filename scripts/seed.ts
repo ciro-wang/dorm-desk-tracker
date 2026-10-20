@@ -8,6 +8,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createServiceClient } from "@/lib/db/server";
+import { describeError } from "@/lib/describe-error";
 import { parseSeed } from "@/lib/seed/schema";
 import { toCents } from "@/lib/money";
 
@@ -78,6 +79,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("seed failed:", e instanceof Error ? e.message : "unknown error");
+  console.error("seed failed:", describeError(e));
   process.exit(1);
 });
