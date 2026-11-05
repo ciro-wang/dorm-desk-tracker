@@ -6,11 +6,13 @@ import { Badges } from "@/components/badges";
 import { ListingTable, type ListingRowData } from "@/components/listing-table";
 import { Price } from "@/components/price";
 import { PriceHistoryChart } from "@/components/price-history-chart";
+import { PurchaseCard } from "@/components/purchase-card";
 import { VerdictPill } from "@/components/verdict-pill";
 import { SHELF_LIMIT_CM, SINGLE_CABLE_MIN_W } from "@/lib/badges";
 import { buildChartSeries } from "@/lib/chart";
 import { buildWatchRow } from "@/lib/dashboard";
-import { loadCatalog, loadLatestLogs, loadListingHistory, loadProductHistory } from "@/lib/data/load";
+import { lowestOffer } from "@/lib/alerts/purchase";
+import { loadCatalog, loadLatestLogs, loadListingHistory, loadProductHistory, loadPurchases } from "@/lib/data/load";
 import { requireUser } from "@/lib/db/ssr";
 import { formatCad } from "@/lib/money";
 import type { Listing, PriceLog, Product } from "@/lib/types";
@@ -27,7 +29,7 @@ export default function ProductPage({ params }: PageProps<"/product/[slug]">) {
 }
 
 const isOtherOffer = (listing: Listing, l: PriceLog | null) =>
-  l != null && (l.condition !== "new" || (l.seller === "marketplace" && !listing.trustedSeller));
+  listing.currency === "USD" || (l != null && (l.condition !== "new" || (l.seller === "marketplace" && !listing.trustedSeller)));
 
 async function ProductDetail({ params }: { params: PageProps<"/product/[slug]">["params"] }) {
   const { db } = await requireUser();
@@ -38,11 +40,13 @@ async function ProductDetail({ params }: { params: PageProps<"/product/[slug]">[
   if (!product) notFound();
 
   const listings = catalog.listings.filter((l) => l.productId === product.id);
-  const [latest, history, listingHistory] = await Promise.all([
+  const [latest, history, listingHistory, purchases] = await Promise.all([
     loadLatestLogs(db, listings.map((l) => l.id)),
     loadProductHistory(db, [product.id], 365),
     loadListingHistory(db, product.id, 120),
+    loadPurchases(db),
   ]);
+  const bought = purchases.filter((x) => x.productId === product.id);
   const pickupIds = catalog.pickupStores.map((s) => s.externalStoreId);
   const merchant = new Map(catalog.merchants.map((m) => [m.id, m]));
   const entries = listings.map((listing) => ({ listing, latest: latest.get(listing.id) ?? null }));
@@ -83,6 +87,18 @@ async function ProductDetail({ params }: { params: PageProps<"/product/[slug]">[
         <Stat label="MSRP" value={<Price cents={product.msrpCents} />} />
       </section>
 
+      {bought.map((x) => (
+        <PurchaseCard
+          key={x.id}
+          purchase={x}
+          product={product}
+          storeName={merchant.get(x.merchantId)?.name ?? "the store"}
+          offer={lowestOffer(entries, x, new Map(catalog.merchants.map((m) => [m.id, m.name])), now)}
+          now={now}
+          linkToProduct={false}
+        />
+      ))}
+
       <section aria-labelledby="stores">
         <h2 id="stores" className="mb-3 text-xl">Stores</h2>
         {main.length ? <ListingTable rows={main} now={now} bestListingId={row.best?.listingId ?? null} /> : <p className="text-sm text-muted-foreground">No store listings yet. Add one in Settings.</p>}
@@ -117,7 +133,7 @@ async function ProductDetail({ params }: { params: PageProps<"/product/[slug]">[
       {others.length > 0 && (
         <section aria-labelledby="other">
           <h2 id="other" className="mb-1 text-xl">Other offers</h2>
-          <p className="mb-3 text-sm text-muted-foreground">Open-box, refurbished or third-party sellers. Shown for reference; not counted as the best price unless you mark the seller as trusted in Settings.</p>
+          <p className="mb-3 text-sm text-muted-foreground">Open-box, refurbished, third-party or US stores (converted to CAD). Shown for reference; not counted as the best price unless you mark the seller as trusted in Settings.</p>
           <ListingTable rows={others} now={now} bestListingId={null} />
         </section>
       )}
@@ -156,7 +172,9 @@ function Specs({ product }: { product: Product }) {
           ["Panel height (no stand)", `${s.panelHeightCm} cm · shelf limit ${SHELF_LIMIT_CM} cm`],
           ["USB-C power for MacBook", s.usbcPdW == null ? "Unknown" : `${s.usbcPdW} W ${s.usbcPdW >= SINGLE_CABLE_MIN_W ? "· one cable charges a MacBook Pro" : "· not enough to charge a MacBook Pro"}`],
         ]
-      : [
+      : s.kind === "chair"
+        ? [["Version tracked", s.variant]]
+        : [
           ["Woofer", `${s.wooferIn}″`],
           ["Subwoofer output", s.subOut == null ? "Not confirmed yet" : s.subOut ? "Yes" : "No"],
           ["Inputs", s.inputs.length ? s.inputs.join(", ") : "Not recorded yet"],

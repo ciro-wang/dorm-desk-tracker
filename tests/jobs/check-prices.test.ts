@@ -168,4 +168,30 @@ describe("runCheckPrices", () => {
     await runCheckPrices({ repo, getAdapter, notify, now: () => new Date(inWindow.getTime() + 1800_000), appBaseUrl: "https://app" });
     expect(notify.send).toHaveBeenCalledTimes(1);
   });
+
+  it("converts US-store prices to CAD and keeps the original", async () => {
+    const us: Merchant = { id: "m-us", slug: "sihoo-us", name: "Sihoo US" };
+    const repo = new FakeRepo([mon], [us], [listing({ productId: mon.id, merchantId: us.id, url: "https://sihoo.com/products/x", currency: "USD" })]);
+    const getAdapter = adapterReturning({ "sihoo-us": async () => ({ ...emptyResult("ok"), priceCents: 100000, wasPriceCents: 120000 }) });
+    await runCheckPrices({ repo, getAdapter, notify: { send: vi.fn() }, now: () => outOfWindow, appBaseUrl: "https://app", usdCadRate: async () => 1.4 });
+    expect(repo.logs[0]).toMatchObject({ status: "ok", priceCents: 140000, wasPriceCents: 168000, nativePriceCents: 100000, nativeCurrency: "USD" });
+
+    repo.logs = [];
+    await runCheckPrices({ repo, getAdapter, notify: { send: vi.fn() }, now: () => outOfWindow, appBaseUrl: "https://app", usdCadRate: async () => null });
+    expect(repo.logs[0]).toMatchObject({ status: "failed", error: "no_fx_rate", priceCents: null });
+  });
+
+  it("alerts once when a price drops below what was paid", async () => {
+    const { repo, notify, getAdapter } = setup({ "canada-computers": ok(119000), "best-buy": ok(125000) });
+    repo.purchases = [
+      { id: "pu", productId: mon.id, merchantId: cc.id, paidCents: 120000, paidTotalCents: null, purchasedOn: "2026-11-02", claimBy: "2026-12-02", claimNote: "", lastAlertedCents: null },
+    ];
+    const run = () => runCheckPrices({ repo, getAdapter, notify, now: () => outOfWindow, appBaseUrl: "https://app" });
+    await run();
+    expect(notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: "Example OLED Monitor M27X · $10.00 under what you paid" }));
+    expect(repo.purchases[0].lastAlertedCents).toBe(119000);
+    notify.send.mockClear();
+    await run();
+    expect(notify.send).not.toHaveBeenCalledWith(expect.objectContaining({ title: expect.stringContaining("under what you paid") }));
+  });
 });

@@ -68,14 +68,31 @@ async function main() {
         bundle_contents: l.bundleContents,
         auto_check: l.autoCheck,
         trusted_seller: l.trustedSeller,
+        currency: l.currency,
       })),
       { onConflict: "product_id,url" },
     );
     if (error) throw error;
   }
 
+  if (seed.purchases.length) {
+    const { error } = await db.from("purchases").upsert(
+      seed.purchases.map((x) => ({
+        product_id: productId.get(x.productSlug),
+        merchant_id: merchantId.get(x.merchantSlug),
+        paid_cents: toCents(x.paid),
+        paid_total_cents: x.paidTotal == null ? null : toCents(x.paidTotal),
+        purchased_on: x.purchasedOn,
+        claim_by: x.claimBy,
+        claim_note: x.claimNote,
+      })),
+      { onConflict: "product_id,merchant_id,purchased_on" },
+    );
+    if (error) throw error;
+  }
+
   console.log(
-    `merchants: ${seed.merchants.length}, pickupStores: ${seed.pickupStores.length}, products: ${seed.products.length}, listings: ${seed.listings.length}`,
+    `merchants: ${seed.merchants.length}, pickupStores: ${seed.pickupStores.length}, products: ${seed.products.length}, listings: ${seed.listings.length}, purchases: ${seed.purchases.length}`,
   );
 }
 

@@ -21,7 +21,8 @@ export function isStale(checkedAt: string, now: Date, maxAgeMs = STALE_AFTER_MS)
 }
 
 /** Whether a log may set a product's price: new, sold by the retailer (or a seller you trust), not a bundle, successfully checked. */
-export function isCountable(listing: Listing, log: PriceLog): boolean {
+/** A real new-condition offer from the store (or a trusted seller), in any currency. */
+export function isComparable(listing: Listing, log: PriceLog): boolean {
   return (
     !listing.isBundle &&
     log.status === "ok" &&
@@ -29,6 +30,11 @@ export function isCountable(listing: Listing, log: PriceLog): boolean {
     (log.seller === "retailer" || listing.trustedSeller) &&
     log.priceCents != null
   );
+}
+
+/** Counts toward best price, history and deal alerts: comparable and sold in CAD. */
+export function isCountable(listing: Listing, log: PriceLog): boolean {
+  return isComparable(listing, log) && listing.currency !== "USD";
 }
 
 export function hasNearbyPickup(log: PriceLog, pickupStoreIds: string[]): boolean {

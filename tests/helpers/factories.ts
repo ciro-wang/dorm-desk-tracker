@@ -39,7 +39,7 @@ export function speaker(over: Partial<Product> = {}): Product {
 let n = 0;
 export function listing(over: Partial<Listing> = {}): Listing {
   n += 1;
-  return { id: `l-${n}`, productId: "p-mon", merchantId: `m-${n}`, url: `https://example.ca/${n}`, isBundle: false, bundleContents: null, autoCheck: true, trustedSeller: false, ...over };
+  return { id: `l-${n}`, productId: "p-mon", merchantId: `m-${n}`, url: `https://example.ca/${n}`, isBundle: false, bundleContents: null, autoCheck: true, trustedSeller: false, currency: "CAD", ...over };
 }
 
 export function log(listingId: string, over: Partial<PriceLog> = {}): PriceLog {
@@ -58,6 +58,8 @@ export function log(listingId: string, over: Partial<PriceLog> = {}): PriceLog {
     seller: "retailer",
     colour: null,
     error: null,
+    nativePriceCents: null,
+    nativeCurrency: null,
     ...over,
   };
 }

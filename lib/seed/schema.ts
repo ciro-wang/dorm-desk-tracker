@@ -23,17 +23,22 @@ const speakerSpecs = z.object({
   inputs: z.array(z.string()),
 });
 
+const chairSpecs = z.object({
+  kind: z.literal("chair"),
+  variant: z.string().min(1),
+});
+
 const product = z
   .object({
     slug,
     name: z.string().min(1),
-    category: z.enum(["monitor", "speaker"]),
+    category: z.enum(["monitor", "speaker", "chair"]),
     msrp: money,
     targetHigh: money,
     targetLow: money,
     referenceLow: money.optional(),
     colourPrefs: z.array(z.string()).default([]),
-    specs: z.discriminatedUnion("kind", [monitorSpecs, speakerSpecs]),
+    specs: z.discriminatedUnion("kind", [monitorSpecs, speakerSpecs, chairSpecs]),
     active: z.boolean().default(true),
     alertsEnabled: z.boolean().default(true),
   })
@@ -48,6 +53,17 @@ const listing = z.object({
   bundleContents: z.string().nullable().default(null),
   autoCheck: z.boolean().default(true),
   trustedSeller: z.boolean().default(false),
+  currency: z.enum(["CAD", "USD"]).default("CAD"),
+});
+
+const purchase = z.object({
+  productSlug: slug,
+  merchantSlug: slug,
+  paid: money,
+  paidTotal: money.optional(),
+  purchasedOn: z.iso.date(),
+  claimBy: z.iso.date(),
+  claimNote: z.string().default(""),
 });
 
 export const SeedFile = z
@@ -58,6 +74,7 @@ export const SeedFile = z
       .default([]),
     products: z.array(product),
     listings: z.array(listing).default([]),
+    purchases: z.array(purchase).default([]),
   })
   .superRefine((s, ctx) => {
     const merchants = new Set(s.merchants.map((m) => m.slug));
@@ -65,6 +82,10 @@ export const SeedFile = z
     s.listings.forEach((l, i) => {
       if (!products.has(l.productSlug)) ctx.addIssue({ code: "custom", path: ["listings", i, "productSlug"], message: "unknown product" });
       if (!merchants.has(l.merchantSlug)) ctx.addIssue({ code: "custom", path: ["listings", i, "merchantSlug"], message: "unknown merchant" });
+    });
+    s.purchases.forEach((x, i) => {
+      if (!products.has(x.productSlug)) ctx.addIssue({ code: "custom", path: ["purchases", i, "productSlug"], message: "unknown product" });
+      if (!merchants.has(x.merchantSlug)) ctx.addIssue({ code: "custom", path: ["purchases", i, "merchantSlug"], message: "unknown merchant" });
     });
     s.pickupStores.forEach((p, i) => {
       if (!merchants.has(p.merchantSlug)) ctx.addIssue({ code: "custom", path: ["pickupStores", i, "merchantSlug"], message: "unknown merchant" });

@@ -10,6 +10,8 @@ export const MERCHANT_DOMAINS: Record<string, string[]> = {
   crutchfield: ["crutchfield.ca"],
   visions: ["visions.ca"],
   "bay-bloor-radio": ["baybloorradio.com"],
+  "sihoo-ca": ["ca.sihoo.com"],
+  "sihoo-us": ["sihoo.com"],
 };
 
 export function isMerchantUrl(url: string, merchantSlug: string): boolean {

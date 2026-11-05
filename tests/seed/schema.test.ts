@@ -1,3 +1,4 @@
+import { MERCHANT_DOMAINS } from "@/lib/merchants";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -11,10 +12,19 @@ describe("parseSeed", () => {
     expect(() => parseSeed(example)).not.toThrow();
   });
 
-  it("lists exactly the ten merchants", () => {
-    expect(parseSeed(example).merchants.map((m) => m.slug).sort()).toEqual(
-      ["amazon", "bay-bloor-radio", "best-buy", "canada-computers", "crutchfield", "dell", "fluance", "memory-express", "newegg", "visions"].sort(),
-    );
+  it("lists exactly the merchants the scraper knows the domains of", () => {
+    expect(parseSeed(example).merchants.map((m) => m.slug).sort()).toEqual(Object.keys(MERCHANT_DOMAINS).sort());
+  });
+
+  it("accepts purchases and US-dollar listings", () => {
+    const s = parseSeed({
+      ...example,
+      listings: [{ productSlug: example.products[0].slug, merchantSlug: "sihoo-us", url: "https://sihoo.com/products/x", currency: "USD" }],
+      purchases: [{ productSlug: example.products[0].slug, merchantSlug: "amazon", paid: 100, purchasedOn: "2026-11-02", claimBy: "2026-12-02" }],
+    });
+    expect(s.listings[0].currency).toBe("USD");
+    expect(s.purchases[0]).toMatchObject({ paid: 100, claimNote: "" });
+    expect(() => parseSeed({ ...example, purchases: [{ productSlug: "nope", merchantSlug: "amazon", paid: 1, purchasedOn: "2026-11-02", claimBy: "2026-12-02" }] })).toThrow();
   });
 
   it("rejects targetLow above targetHigh", () => {

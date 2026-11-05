@@ -2,9 +2,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { FeedList } from "@/components/feed-list";
+import { PurchaseCard } from "@/components/purchase-card";
 import { WatchCard } from "@/components/watch-card";
 import { buildWatchRow } from "@/lib/dashboard";
-import { loadCatalog, loadLatestLogs, loadNews, loadProductHistory } from "@/lib/data/load";
+import { lowestOffer } from "@/lib/alerts/purchase";
+import { loadCatalog, loadLatestLogs, loadNews, loadProductHistory, loadPurchases } from "@/lib/data/load";
 import { requireUser } from "@/lib/db/ssr";
 import type { Category } from "@/lib/types";
 
@@ -20,12 +22,14 @@ export default function DashboardPage({ searchParams }: PageProps<"/">) {
 
 async function Dashboard({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   const { db } = await requireUser();
-  const cat: Category = (await searchParams).cat === "speaker" ? "speaker" : "monitor";
+  const requested = (await searchParams).cat;
+  const cat: Category = requested === "speaker" || requested === "chair" ? requested : "monitor";
   const now = new Date();
 
-  const catalog = await loadCatalog(db);
+  const [catalog, purchases] = await Promise.all([loadCatalog(db), loadPurchases(db)]);
   const products = catalog.products.filter((p) => p.active && p.category === cat);
-  const listings = catalog.listings.filter((l) => products.some((p) => p.id === l.productId));
+  const owned = new Set(purchases.map((x) => x.productId));
+  const listings = catalog.listings.filter((l) => products.some((p) => p.id === l.productId) || owned.has(l.productId));
   const [latest, history, news] = await Promise.all([
     loadLatestLogs(db, listings.map((l) => l.id)),
     loadProductHistory(db, products.map((p) => p.id), 60),
@@ -53,19 +57,43 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/">["searc
         <FeedList items={news} products={catalog.products} now={now} />
       </section>
 
+      {purchases.length > 0 && (
+        <section aria-labelledby="bought">
+          <h2 id="bought" className="mb-1 text-xl">You bought these</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Watched for a lower price you could claim back before the deadline.</p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {purchases.map((x) => {
+              const product = catalog.products.find((p) => p.id === x.productId);
+              if (!product) return null;
+              const entries = catalog.listings.filter((l) => l.productId === x.productId).map((listing) => ({ listing, latest: latest.get(listing.id) ?? null }));
+              return (
+                <PurchaseCard
+                  key={x.id}
+                  purchase={x}
+                  product={product}
+                  storeName={merchantName.get(x.merchantId) ?? "the store"}
+                  offer={lowestOffer(entries, x, merchantName, now)}
+                  now={now}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <section aria-labelledby="watch">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 id="watch" className="text-xl">Your watchlist</h2>
           <div role="tablist" aria-label="Category" className="inline-flex rounded-lg border border-border bg-card p-1 text-sm">
-            {(["monitor", "speaker"] as const).map((c) => (
+            {(["monitor", "speaker", "chair"] as const).map((c) => (
               <Link
                 key={c}
                 role="tab"
                 aria-selected={c === cat}
-                href={c === "monitor" ? "/" : "/?cat=speaker"}
+                href={c === "monitor" ? "/" : `/?cat=${c}`}
                 className={`rounded-md px-3 py-1 ${c === cat ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {c === "monitor" ? "Monitors" : "Speakers"}
+                {{ monitor: "Monitors", speaker: "Speakers", chair: "Chairs" }[c]}
               </Link>
             ))}
           </div>

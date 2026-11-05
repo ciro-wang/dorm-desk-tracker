@@ -1,8 +1,10 @@
 import { decideAlerts } from "@/lib/alerts/decide";
 import { formatAlert } from "@/lib/alerts/format";
+import { decidePurchaseAlert, formatPurchaseAlert, lowestOffer } from "@/lib/alerts/purchase";
 import type { Notifier } from "@/lib/alerts/ntfy";
 import type { Repo } from "@/lib/jobs/repo";
 import { isInSaleWindow } from "@/lib/jobs/schedule";
+import { fetchUsdCadRate, toCadCents } from "@/lib/fx";
 import { isMerchantUrl } from "@/lib/merchants";
 import { bestPriceNow, pickupAtTarget } from "@/lib/pricing/best-price";
 import { isPlausible } from "@/lib/pricing/plausible";
@@ -20,6 +22,8 @@ export interface CheckPricesDeps {
   appBaseUrl: string;
   /** Skip adapters that need a browser (used by the Vercel route). */
   skipBrowser?: boolean;
+  /** USD→CAD rate for US-store listings; defaults to the Bank of Canada's daily rate. */
+  usdCadRate?: () => Promise<number | null>;
 }
 
 export interface CheckPricesCounts {
@@ -45,6 +49,9 @@ export async function runCheckPrices(deps: CheckPricesDeps): Promise<CheckPrices
   const pickupIds = pickupStores.map((s) => s.externalStoreId);
   const storesOf = (merchantId: string) => pickupStores.filter((s) => s.merchantId === merchantId).map((s) => s.externalStoreId);
 
+  let rate: Promise<number | null> | undefined;
+  const usdCad = () => (rate ??= (deps.usdCadRate ?? fetchUsdCadRate)());
+
   const products = new Map<string, Product>();
   for (const { listing, product, merchant } of checkable) {
     const adapter = getAdapter(merchant.slug);
@@ -62,11 +69,25 @@ export async function runCheckPrices(deps: CheckPricesDeps): Promise<CheckPrices
         result = emptyResult("failed", "adapter_error");
       }
     }
+    let native: { nativePriceCents: number; nativeCurrency: "USD" } | null = null;
+    if (result.status === "ok" && result.priceCents != null && listing.currency === "USD") {
+      const r = await usdCad();
+      if (r == null) result = { ...emptyResult("failed", "no_fx_rate") };
+      else {
+        native = { nativePriceCents: result.priceCents, nativeCurrency: "USD" };
+        result = {
+          ...result,
+          priceCents: toCadCents(result.priceCents, r),
+          wasPriceCents: result.wasPriceCents == null ? null : toCadCents(result.wasPriceCents, r),
+          shippingCents: result.shippingCents == null ? null : toCadCents(result.shippingCents, r),
+        };
+      }
+    }
     if (result.status === "ok" && (result.priceCents == null || !isPlausible(result.priceCents, product.msrpCents))) {
       result = { ...result, status: "failed", error: "implausible" };
     }
 
-    await repo.insertPriceLog({ ...result, listingId: listing.id, checkedAt: now().toISOString(), source: "scraped" });
+    await repo.insertPriceLog({ ...result, ...native, listingId: listing.id, checkedAt: now().toISOString(), source: "scraped" });
     counts.checked += 1;
     if (result.status === "ok") counts.ok += 1;
     else if (result.status === "blocked") counts.blocked += 1;
@@ -100,6 +121,19 @@ export async function runCheckPrices(deps: CheckPricesDeps): Promise<CheckPrices
       await repo.saveAlertState(next);
     } catch {
       // Delivery failed: leave state unchanged so the alert is retried on the next run.
+    }
+  }
+
+  // Things already bought: tell the owner when any store goes below what they paid, while a claim is still possible.
+  for (const { purchase, product } of await repo.listPurchases()) {
+    const offer = lowestOffer(await repo.latestLogsForProduct(product.id), purchase, merchantName, now());
+    if (!decidePurchaseAlert(purchase, offer, now())) continue;
+    try {
+      await notify.send(formatPurchaseAlert(purchase, product, offer!, appBaseUrl));
+      await repo.markPurchaseAlerted(purchase.id, offer!.cents);
+      counts.alerts += 1;
+    } catch {
+      // Retried on the next run.
     }
   }
 

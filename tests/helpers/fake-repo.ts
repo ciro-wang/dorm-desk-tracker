@@ -1,7 +1,7 @@
 import type { AlertKind, AlertState } from "@/lib/alerts/decide";
 import type { Repo } from "@/lib/jobs/repo";
 import { effectiveLog } from "@/lib/pricing/best-price";
-import type { Listing, Merchant, NewsItem, PickupStore, PriceLog, Product } from "@/lib/types";
+import type { Listing, Merchant, NewsItem, PickupStore, PriceLog, Product, Purchase } from "@/lib/types";
 
 export class FakeRepo implements Repo {
   logs: Omit<PriceLog, "id">[] = [];
@@ -9,6 +9,7 @@ export class FakeRepo implements Repo {
   alertLog: { productId: string; kind: AlertKind; cents: number }[] = [];
   jobRuns: { job: string; startedAt: Date; ok: number; failed: number }[] = [];
   news: Omit<NewsItem, "id">[] = [];
+  purchases: Purchase[] = [];
 
   constructor(
     public products: Product[],
@@ -74,5 +75,12 @@ export class FakeRepo implements Repo {
   }
   async listActiveProducts() {
     return this.products.filter((p) => p.active);
+  }
+  async listPurchases() {
+    return this.purchases.map((purchase) => ({ purchase, product: this.products.find((p) => p.id === purchase.productId)! }));
+  }
+  async markPurchaseAlerted(purchaseId: string, cents: number) {
+    const p = this.purchases.find((x) => x.id === purchaseId);
+    if (p) p.lastAlertedCents = cents;
   }
 }

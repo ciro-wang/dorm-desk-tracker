@@ -1,5 +1,5 @@
 import type { AlertKind, AlertState } from "@/lib/alerts/decide";
-import type { Listing, Merchant, NewsItem, PickupStore, PriceLog, Product } from "@/lib/types";
+import type { Listing, Merchant, NewsItem, PickupStore, PriceLog, Product, Purchase } from "@/lib/types";
 
 /** Everything the scheduled jobs need from storage. Implemented by lib/db/supabase-repo.ts. */
 export interface Repo {
@@ -16,4 +16,6 @@ export interface Repo {
   recordJobRun(job: string, startedAt: Date, ok: number, failed: number): Promise<void>;
   upsertNewsItems(items: Omit<NewsItem, "id">[]): Promise<number>;
   listActiveProducts(): Promise<Product[]>;
+  listPurchases(): Promise<{ purchase: Purchase; product: Product }[]>;
+  markPurchaseAlerted(purchaseId: string, cents: number): Promise<void>;
 }

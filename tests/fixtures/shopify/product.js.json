@@ -1,0 +1,12 @@
+{
+  "id": 1001,
+  "title": "Example Mesh Chair",
+  "handle": "example-mesh-chair",
+  "available": true,
+  "price": 29999,
+  "compare_at_price": 44999,
+  "variants": [
+    { "id": 111, "title": "Grey / Standard", "price": 29999, "compare_at_price": 44999, "available": true },
+    { "id": 222, "title": "Grey / Footrest", "price": 34999, "compare_at_price": 34999, "available": false }
+  ]
+}

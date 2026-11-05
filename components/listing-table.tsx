@@ -54,7 +54,10 @@ export function ListingTable({ rows, now, bestListingId }: { rows: ListingRowDat
                   {listing.trustedSeller && <div className="text-xs text-muted-foreground">trusted seller</div>}
                 </td>
                 <td className="px-4 py-3 align-top tabular-nums">
-                  {cents != null ? formatCad(cents) : "—"}
+                  {cents != null ? (latest?.nativePriceCents != null ? `≈ ${formatCad(cents)}` : formatCad(cents)) : "—"}
+                  {cents != null && latest?.nativePriceCents != null && (
+                    <div className="text-xs text-muted-foreground">US${(latest.nativePriceCents / 100).toFixed(2)} at today’s rate</div>
+                  )}
                   {latest?.shippingCents ? <div className="text-xs text-muted-foreground">incl. {formatCad(latest.shippingCents)} shipping</div> : null}
                 </td>
                 <td className="px-4 py-3 align-top">{yesNo(latest?.inStockOnline ?? null)}</td>

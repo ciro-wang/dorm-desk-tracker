@@ -10,6 +10,7 @@ import {
   priceLogFromRow,
   priceLogToRow,
   productFromRow,
+  purchaseFromRow,
 } from "@/lib/db/mappers";
 import type { Repo } from "@/lib/jobs/repo";
 import { effectiveLog } from "@/lib/pricing/best-price";
@@ -90,6 +91,15 @@ export function supabaseRepo(db: SupabaseClient): Repo {
 
     async saveAlertState(s: AlertState) {
       must(await db.from("alert_state").upsert({ ...alertStateToRow(s), updated_at: new Date().toISOString() }, { onConflict: "product_id" }));
+    },
+
+    async listPurchases() {
+      const rows = must(await db.from("purchases").select("*, products!inner(*)")) as Record<string, unknown>[];
+      return rows.map((r) => ({ purchase: purchaseFromRow(r), product: productFromRow(r.products as Record<string, unknown>) }));
+    },
+
+    async markPurchaseAlerted(purchaseId: string, cents: number) {
+      must(await db.from("purchases").update({ last_alerted_cents: cents }).eq("id", purchaseId));
     },
 
     async logAlert(productId: string, kind: AlertKind, cents: number) {

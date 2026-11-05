@@ -1,5 +1,5 @@
 import type { AlertKind, AlertState } from "@/lib/alerts/decide";
-import type { Listing, Merchant, NewsItem, PriceLog, Product } from "@/lib/types";
+import type { Listing, Merchant, NewsItem, PriceLog, Product, Purchase } from "@/lib/types";
 
 /* The one place where database snake_case meets domain camelCase. */
 
@@ -36,6 +36,7 @@ export function listingFromRow(r: Row): Listing {
     bundleContents: (r.bundle_contents as string | null) ?? null,
     autoCheck: r.auto_check as boolean,
     trustedSeller: Boolean(r.trusted_seller),
+    currency: r.currency === "USD" ? "USD" : "CAD",
   };
 }
 
@@ -54,6 +55,8 @@ export function priceLogToRow(l: Omit<PriceLog, "id">): Row {
     seller: l.seller,
     colour: l.colour,
     error: l.error,
+    native_price_cents: l.nativePriceCents ?? null,
+    native_currency: l.nativeCurrency ?? null,
   };
 }
 
@@ -73,6 +76,8 @@ export function priceLogFromRow(r: Row): PriceLog {
     seller: r.seller as PriceLog["seller"],
     colour: (r.colour as string | null) ?? null,
     error: (r.error as string | null) ?? null,
+    nativePriceCents: (r.native_price_cents as number | null) ?? null,
+    nativeCurrency: (r.native_currency as PriceLog["nativeCurrency"]) ?? null,
   };
 }
 
@@ -130,4 +135,18 @@ export function newsItemFromRow(r: Row): NewsItem {
 /** Rows from the *_daily_best views → points at local noon of each Toronto day. */
 export function dailyRowsToPoints(rows: { day: string; cents: number }[]): { at: Date; cents: number }[] {
   return rows.map((r) => ({ at: new Date(`${r.day}T12:00:00-05:00`), cents: r.cents }));
+}
+
+export function purchaseFromRow(r: Row): Purchase {
+  return {
+    id: r.id as string,
+    productId: r.product_id as string,
+    merchantId: r.merchant_id as string,
+    paidCents: r.paid_cents as number,
+    paidTotalCents: (r.paid_total_cents as number | null) ?? null,
+    purchasedOn: r.purchased_on as string,
+    claimBy: r.claim_by as string,
+    claimNote: (r.claim_note as string) ?? "",
+    lastAlertedCents: (r.last_alerted_cents as number | null) ?? null,
+  };
 }

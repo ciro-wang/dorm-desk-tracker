@@ -1,8 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dailyRowsToPoints, listingFromRow, merchantFromRow, newsItemFromRow, priceLogFromRow, productFromRow } from "@/lib/db/mappers";
+import { dailyRowsToPoints, listingFromRow, merchantFromRow, newsItemFromRow, priceLogFromRow, productFromRow, purchaseFromRow } from "@/lib/db/mappers";
 import { effectiveLog } from "@/lib/pricing/best-price";
-import type { Listing, Merchant, NewsItem, PickupStore, PriceLog, Product } from "@/lib/types";
+import type { Listing, Merchant, NewsItem, PickupStore, PriceLog, Product, Purchase } from "@/lib/types";
 
 /* Reads for pages. All run through the owner's cookie session, so row-level security applies. */
 
@@ -44,6 +44,10 @@ export async function loadCatalog(db: SupabaseClient): Promise<Catalog> {
       name: r.name as string,
     })),
   };
+}
+
+export async function loadPurchases(db: SupabaseClient): Promise<Purchase[]> {
+  return (await all((a, b) => db.from("purchases").select("*").order("purchased_on", { ascending: false }).range(a, b))).map(purchaseFromRow);
 }
 
 /** The log that represents each listing right now (see effectiveLog). */

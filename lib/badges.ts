@@ -36,7 +36,7 @@ export function badgesFor(
   if (p.specs.kind === "monitor") {
     if ((p.specs.usbcPdW ?? 0) >= SINGLE_CABLE_MIN_W) out.push("single_cable");
     if (p.specs.panelHeightCm <= SHELF_LIMIT_CM) out.push("fits_shelf");
-  } else if (p.specs.subOut === true) {
+  } else if (p.specs.kind === "speaker" && p.specs.subOut === true) {
     out.push("sub_out");
   }
   if (v.inflatedWas) out.push("inflated_was");
