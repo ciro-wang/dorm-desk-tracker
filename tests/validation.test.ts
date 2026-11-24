@@ -40,7 +40,7 @@ describe("listing urls", () => {
 describe("ListingInput", () => {
   it("reads the trusted-seller checkbox", async () => {
     const { ListingInput } = await import("@/lib/validation");
-    const base = { productId: "3f6c2a7e-1b2d-4c3e-8f9a-0b1c2d3e4f5a", merchantId: "4f6c2a7e-1b2d-4c3e-8f9a-0b1c2d3e4f5a", url: "https://www.amazon.ca/dp/B0886B1TWC" };
+    const base = { productId: "3f6c2a7e-1b2d-4c3e-8f9a-0b1c2d3e4f5a", merchantId: "4f6c2a7e-1b2d-4c3e-8f9a-0b1c2d3e4f5a", url: "https://www.amazon.ca/dp/B0EXAMPLE1" };
     expect(ListingInput.parse({ ...base, trustedSeller: "on" }).trustedSeller).toBe(true);
     expect(ListingInput.parse(base).trustedSeller).toBe(false);
   });

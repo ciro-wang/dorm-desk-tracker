@@ -1,7 +1,11 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { createDemoClient, DEMO_USER } from "@/lib/demo/db";
+import { demoMode } from "@/lib/demo/mode";
 
 export function supabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,6 +34,11 @@ export async function createSsrClient() {
 
 /** Every page and Server Action calls this; the proxy alone is not trusted for auth. */
 export async function requireUser() {
+  if (demoMode()) {
+    await connection();
+    // Read-only, made-up data: any write through this client throws.
+    return { db: createDemoClient(new Date()), user: DEMO_USER as User };
+  }
   if (!supabaseEnv()) redirect("/login");
   const db = await createSsrClient();
   const { data } = await db.auth.getUser();

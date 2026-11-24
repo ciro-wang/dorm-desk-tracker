@@ -1,4 +1,5 @@
 import { ManualPriceForm } from "@/components/manual-price-form";
+import { demoMode } from "@/lib/demo/mode";
 import { effectiveCents, isStale } from "@/lib/pricing/best-price";
 import { formatCad } from "@/lib/money";
 import { timeAgo } from "@/lib/time";
@@ -66,9 +67,11 @@ export function ListingTable({ rows, now, bestListingId }: { rows: ListingRowDat
                 </td>
                 <td className="px-4 py-3 align-top text-xs">
                   {statusLine(latest, now)}
-                  <div className="mt-2">
-                    <ManualPriceForm listingId={listing.id} hasPickupStores={pickupIds.length > 0} />
-                  </div>
+                  {!demoMode() && (
+                    <div className="mt-2">
+                      <ManualPriceForm listingId={listing.id} hasPickupStores={pickupIds.length > 0} />
+                    </div>
+                  )}
                 </td>
               </tr>
             );

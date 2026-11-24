@@ -1,8 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isPublicPath } from "@/lib/auth/paths";
+import { demoMode, demoRoute } from "@/lib/demo/mode";
 
 export async function proxy(request: NextRequest) {
+  if (demoMode()) {
+    const route = demoRoute(request.method, request.nextUrl.pathname);
+    if (route.action === "not_found") return new NextResponse(null, { status: 404 });
+    if (route.action === "method_not_allowed") return new NextResponse(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+    if (route.action === "redirect") return NextResponse.redirect(new URL(route.to, request.url));
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
